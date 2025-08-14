@@ -1,6 +1,8 @@
 # Adaptive Guidance Accelerates Reinforcement Learning of Reasoning Models
 
-📄 [Paper](https://www.arxiv.org/abs/2506.13923) | 🤗 [Dataset](https://huggingface.co/datasets/vaskarnath/guide_math_rl_dataset)
+<center>
+  📄 [Paper](https://www.arxiv.org/abs/2506.13923) | 🤗 [Dataset](https://huggingface.co/datasets/vaskarnath/guide_math_rl_dataset)
+</center>
 
 This repository contains the official implementation of the Guide-GRPO algorithm as described in the paper Adaptive Guidance Accelerates Reinforcement Learning of Reasoning Models, including all the necessary code to reproduce the experiments in our paper.
 
