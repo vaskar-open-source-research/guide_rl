@@ -45,6 +45,21 @@ This script will:
 
 The Docker build sets up the environment within a container. The `Dockerfile.uv` is based on a PyTorch training image and automates the entire setup process.
 
+
+## 📥 Download the Dataset
+
+
+You can download the dataset directly from 🤗 Hugging Face and place it in the following directory:
+
+```
+mkdir -p verl/experiments/math_reasoning/data/guidance_data_full
+cd verl/experiments/math_reasoning/data/guidance_data_full
+
+
+git lfs install
+git clone https://huggingface.co/datasets/vaskarnath/guide_math_rl_dataset .
+```
+
 ## Running Experiments
 
 The experiments for math reasoning are located in `verl/experiments/math_reasoning`.
