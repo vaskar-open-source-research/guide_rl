@@ -1,0 +1,235 @@
+data:
+  tokenizer: null
+  train_files:
+  - experiments/math_reasoning/data/ossmall_45K_r1_prompt/train.parquet
+  val_files:
+  - experiments/math_reasoning/data/ossmall_45K_r1_prompt/validation.parquet
+  test_files:
+  - experiments/math_reasoning/data/ossmall_45K_r1_prompt/test.parquet
+  prompt_key: prompt
+  max_prompt_length: 1024
+  max_response_length: 512
+  train_batch_size: 8
+  val_batch_size: 128
+  return_raw_input_ids: false
+  return_raw_chat: true
+  shuffle: true
+  apply_chat_template: false
+  filter_accuracy: false
+  filter_truncated: false
+  accuracy_lower_bound: 0.001
+  accuracy_upper_bound: 0.999
+  hint_accuracy_lower_bound: 0.001
+  hint_accuracy_upper_bound: 0.999
+actor_rollout_ref:
+  hybrid_engine: true
+  model:
+    path: Qwen/Qwen2.5-0.5B
+    external_lib: null
+    override_config: {}
+    enable_gradient_checkpointing: true
+    use_remove_padding: false
+  actor:
+    strategy: fsdp
+    importance_weighted_reroll: false
+    use_ref_prompt: false
+    apply_off_policy_shaping: false
+    gamma_strategy: constant
+    gamma_value: 1.0
+    loss_remove_token_mean: false
+    loss_remove_clip: false
+    ppo_mini_batch_size: 8
+    ppo_micro_batch_size: null
+    ppo_micro_batch_size_per_gpu: 1
+    use_dynamic_bsz: false
+    ppo_max_token_len_per_gpu: 16384
+    grad_clip: 1.0
+    clip_ratio: 0.2
+    entropy_coeff: 0.0
+    use_kl_loss: true
+    kl_loss_coef: 0.0
+    kl_loss_type: low_var_kl
+    ppo_epochs: 1
+    shuffle: false
+    ulysses_sequence_parallel_size: 1
+    optim:
+      lr: 5.0e-07
+      lr_warmup_steps_ratio: 0.0
+      min_lr_ratio: null
+      warmup_style: constant
+      total_training_steps: -1
+    fsdp_config:
+      wrap_policy:
+        min_num_params: 0
+      param_offload: false
+      grad_offload: false
+      optimizer_offload: false
+      fsdp_size: -1
+  ref:
+    fsdp_config:
+      param_offload: true
+      wrap_policy:
+        min_num_params: 0
+    log_prob_micro_batch_size: null
+    log_prob_micro_batch_size_per_gpu: 1
+    log_prob_use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+    log_prob_max_token_len_per_gpu: ${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}
+    ulysses_sequence_parallel_size: ${actor_rollout_ref.actor.ulysses_sequence_parallel_size}
+  rollout:
+    name: vllm
+    temperature: 1.0
+    top_k: -1
+    top_p: 1
+    prompt_length: ${data.max_prompt_length}
+    response_length: ${data.max_response_length}
+    dtype: bfloat16
+    gpu_memory_utilization: 0.7
+    swap_space: 4
+    ignore_eos: false
+    enforce_eager: true
+    free_cache_engine: true
+    load_format: dummy_dtensor
+    tensor_model_parallel_size: 1
+    max_num_batched_tokens: 2048
+    max_num_seqs: 1024
+    log_prob_micro_batch_size: null
+    log_prob_micro_batch_size_per_gpu: 1
+    log_prob_use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+    log_prob_max_token_len_per_gpu: ${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}
+    disable_log_stats: true
+    enable_chunked_prefill: false
+    do_sample: true
+    'n': 4
+critic:
+  strategy: fsdp
+  optim:
+    lr: 1.0e-05
+    lr_warmup_steps_ratio: 0.0
+    min_lr_ratio: null
+    warmup_style: constant
+    total_training_steps: -1
+  model:
+    path: ~/models/deepseek-llm-7b-chat
+    tokenizer_path: ${actor_rollout_ref.model.path}
+    override_config: {}
+    external_lib: ${actor_rollout_ref.model.external_lib}
+    enable_gradient_checkpointing: true
+    use_remove_padding: false
+    fsdp_config:
+      param_offload: false
+      grad_offload: false
+      optimizer_offload: false
+      wrap_policy:
+        min_num_params: 0
+      fsdp_size: -1
+  ppo_mini_batch_size: ${actor_rollout_ref.actor.ppo_mini_batch_size}
+  ppo_micro_batch_size: null
+  ppo_micro_batch_size_per_gpu: 1
+  forward_micro_batch_size: ${critic.ppo_micro_batch_size}
+  forward_micro_batch_size_per_gpu: ${critic.ppo_micro_batch_size_per_gpu}
+  use_dynamic_bsz: ${actor_rollout_ref.actor.use_dynamic_bsz}
+  ppo_max_token_len_per_gpu: 32768
+  forward_max_token_len_per_gpu: ${critic.ppo_max_token_len_per_gpu}
+  ulysses_sequence_parallel_size: 1
+  ppo_epochs: ${actor_rollout_ref.actor.ppo_epochs}
+  shuffle: ${actor_rollout_ref.actor.shuffle}
+  grad_clip: 1.0
+  cliprange_value: 0.5
+reward_model:
+  enable: true
+  strategy: fsdp
+  model_type: prime
+  rm_coef: 5
+  model:
+    input_tokenizer: null
+    path: ~/models/FsfairX-LLaMA3-RM-v0.1
+    external_lib: ${actor_rollout_ref.model.external_lib}
+    use_remove_padding: false
+    fsdp_config:
+      min_num_params: 0
+      param_offload: false
+      fsdp_size: -1
+  micro_batch_size: null
+  micro_batch_size_per_gpu: 1
+  mini_batch_size: 8
+  max_length: null
+  ulysses_sequence_parallel_size: 1
+  use_dynamic_bsz: ${critic.use_dynamic_bsz}
+  forward_max_token_len_per_gpu: ${critic.forward_max_token_len_per_gpu}
+  reward_manager: rift
+  prime_model:
+    input_tokenizer: null
+    path: Qwen/Qwen2.5-0.5B
+    ref_type: freeze
+    ref_path: Qwen/Qwen2.5-0.5B
+    external_lib: ${actor_rollout_ref.model.external_lib}
+    enable_gradient_checkpointing: ${actor_rollout_ref.model.enable_gradient_checkpointing}
+    use_remove_padding: true
+    fsdp_config:
+      wrap_policy:
+        min_num_params: 0
+      param_offload: ${actor_rollout_ref.actor.fsdp_config.param_offload}
+      grad_offload: ${actor_rollout_ref.actor.fsdp_config.grad_offload}
+      optimizer_offload: ${actor_rollout_ref.actor.fsdp_config.optimizer_offload}
+    update: after
+    optim:
+      lr: 1.0e-06
+      lr_warmup_steps_ratio: 0.0
+      min_lr_ratio: null
+      warmup_style: constant
+      total_training_steps: -1
+      weight_decay: 0.0
+      grad_clip: 10.0
+    beta_train: 0.05
+    loss_type: ce
+    granularity: token
+    n_samples: ${actor_rollout_ref.rollout.n}
+    prime_norm: batch_norm
+algorithm:
+  gamma: 1.0
+  lam: 1.0
+  adv_estimator: rloo
+  adv_params:
+    verifier_gamma: ${algorithm.gamma}
+    reward_model_gamma: ${algorithm.gamma}
+  kl_penalty: kl
+  kl_ctrl:
+    type: fixed
+    kl_coef: 0.0
+  grpo:
+    use_std: true
+trainer:
+  total_epochs: 100
+  total_training_steps: null
+  project_name: verl-dev
+  experiment_name: Qwen-0.5-save-test-v3
+  logger:
+  - console
+  - wandb
+  val_generations_to_log_to_wandb: 0
+  nnodes: 1
+  n_gpus_per_node: 8
+  save_freq: 1
+  resume_mode: auto
+  resume_from_path: false
+  resume_from_iteration: null
+  test_freq: 16
+  critic_warmup: 0
+  default_hdfs_dir: null
+  default_local_dir: ./ckpt
+  s3_path: s3://scale-ml/genai/maple/reasoner_models/Qwen-0.5-save-test-v3
+  val_before_train: false
+scale_reasoning:
+  response_format: reasoning_format
+  balance_batch: false
+  do_verify_format: true
+  use_hint: true
+  use_cot: true
+  reroll_with_hints: false
+  reroll_with_cot: false
+  use_ref_prompt: false
+  reroll_threshold: 0.0
+  mixin: false
+  roll_with_balanced_batch: false
+  plain_adv_weight: 1.0
+  custom_chat_template: null

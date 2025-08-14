@@ -1,0 +1,7 @@
+*__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*verl/experiments/math_reasoning/python_scripts/outputs/*

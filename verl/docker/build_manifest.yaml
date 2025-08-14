@@ -1,0 +1,26 @@
+build_configs:
+  verl_build:
+    build_context:
+      root: ../../
+      include_paths:
+        - verl/
+      dockerfile: verl/docker/Dockerfile.uv
+      dockerignore: verl/docker/.dockerignore
+      mount: /dev/mapper/vg.01-lv_ephemeral 
+    local:
+      repository: temp
+      tag: latest
+    remote:
+      registry: 692474966980.dkr.ecr.us-west-2.amazonaws.com
+      repository: tmp
+
+
+
+interactive_configs:
+  verl_build: # key must match a build config in the build_configs dict
+    use_gpu: True
+    mounts:
+      - host_path: ${MODELS_ROOT} # make .env file and set this
+        container_path: /workspace
+    raw_run_params:
+      shm_size: "100G"
