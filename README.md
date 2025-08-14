@@ -8,7 +8,7 @@
 
 </div>
 
-<div style="text-align: center;">
+<div align="center">
 
 [📄 Paper](https://www.arxiv.org/abs/2506.13923) | [🤗 Dataset](https://huggingface.co/datasets/vaskarnath/guide_math_rl_dataset) | [🐦 Twitter](https://x.com/SeanHendryx/status/1937224478351851764) | [✍️ Blog](https://scale.com/blog/future-ai-learning)
 
